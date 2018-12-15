@@ -1,0 +1,232 @@
+
+output:
+  html_document: default
+  pdf_document:
+    fig_caption: yes
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,fig.width=5, fig.height=5,fig.align = "center",cache=TRUE)
+```
+
+
+```{r, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE}
+##libraries, globals
+
+library(ggplot2)
+library(reshape)
+library(grid)
+library(dplyr)
+library(gridExtra)
+library(lme4)
+library(summarytools)
+library(MuMIn)
+library(stargazer)
+
+paper_theme <- theme_classic() + theme(
+  axis.title.x =element_blank(),
+  axis.text.x=element_blank(),
+  axis.title.y = element_blank(),
+  axis.text.y  = element_blank(),
+  axis.line.x = element_blank(),
+  axis.line.y = element_blank(),
+  axis.ticks = element_blank(),
+
+  legend.text=element_blank(),
+  legend.title=element_blank(),
+  plot.background = element_blank(),
+
+  strip.text=element_blank(),
+          strip.background = element_blank())
+
+
+binomial_smooth <- function(...) {
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), ...)
+}
+
+
+data <- read.csv("output/out2.csv")
+
+data_use <- cbind(data)
+o2 <- data_use$out_i
+o3 <- rep(head(data_use$out_i, length(data_use$out_i)/20), 20)
+#o3 <- rep(head(data_use$out_i, length(data_use$out_i)/15), 15)
+
+o4 <- rev(rep(head(data_use$out_i, length(data_use$out_i)/355), 355))
+
+data_use$out_i2 <- rev(o2)
+data_use$out_i3 <- o3
+#data_use$out_i4 <- o4
+
+data_use <- data_use %>%
+          filter((out_i < 50000) & (out_i2 < 50000)) 
+```
+
+
+      
+
+```{r}
+
+
+
+for (i in 1:100) {
+  #ub <- runif(1,5,30)
+  #ub <- 1
+  #ids <- round(runif(ub, 0, max(data_use$id)))
+  ids <-c(unique(data_use$id)[i])
+  print(ids)
+   data_make <- subset(data_use, data_use$id %in% ids)
+   ggplot(data=data_make) +
+    geom_bar(aes(x=X, y=out_i,group=id), stat="identity") +
+     paper_theme + 
+    facet_wrap(~id, scales="free") +
+    guides(color=FALSE, size=FALSE, alpha=FALSE, fill=FALSE) +
+      scale_colour_gradientn(colours = c("black", "gray", "blue3", "blue4", "purple3"))
+      scale_fill_gradientn(colours = c("black", "gray", "blue3", "blue4", "purple3"))
+  title <- paste(paste("figs/bar_plots/b_", i, sep =""), ".png", sep="")
+   ggsave(title)
+
+
+}
+
+for (i in 1:100) {
+  #ub <- runif(1,5,30)
+  #ub <- 3
+  #ids <- round(runif(ub, 0, max(data_use$id)))
+  ids <-c(unique(data_use$id)[i])
+  print(ids)
+   data_make <- subset(data_use, data_use$id %in% ids)
+   ggplot(data=data_make) +
+    geom_point(aes(x=out_i, y=out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    geom_point(aes(x=out_i2, y=out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+    geom_point(aes(x=-out_i, y=out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    geom_point(aes(x=-out_i2, y=out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+    geom_point(aes(x=out_i, y=-out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    geom_point(aes(x=out_i2, y=-out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+    geom_point(aes(x=-out_i, y=-out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    geom_point(aes(x=-out_i2, y=-out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+
+     paper_theme + 
+    facet_wrap(~id, scales="free") +
+    guides(color=FALSE, size=FALSE, alpha=FALSE, fill=FALSE) +
+      scale_colour_gradientn(colours = c("black", "gray", "blue3", "blue4", "purple3"))
+      scale_fill_gradientn(colours = c("black", "gray", "blue3", "blue4", "purple3"))
+  title <- paste(paste("figs/bar_plots/b_", i, sep =""), ".png", sep="")
+   ggsave(title)
+
+
+}
+
+
+
+
+
+
+for (i in 70:80) {
+ # ub <- runif(1,2,50)
+  ub <- 9
+  #ub <- 1
+  ids <- round(runif(ub, 0, max(data_use$id)))
+  i#ds <-c(unique(data_use$id)[i])
+  print(ids)
+   data_make <- subset(data_use, data_use$id %in% ids)
+   data_make$out_i2 <- data_make$out_i2 + data_make$out_i * runif(1,0,1) + data_make$X * 0.1
+   ggplot(data=data_make) +
+    geom_path(aes(x=out_i2, y=out_i, group=id)) +
+    geom_path(aes(x=out_i, y=out_i2,group=id)) +
+    geom_path(aes(x=-out_i2, y=out_i, group=id)) +
+    geom_path(aes(x=-out_i, y=out_i2,group=id)) +
+    geom_path(aes(x=-out_i, y=-out_i2,group=id)) +
+    geom_path(aes(x=-out_i2, y=-out_i,group=id)) +
+    geom_path(aes(x=out_i, y=-out_i2,group=id)) +
+    geom_path(aes(x=out_i2, y=-out_i,group=id)) +
+    geom_path(aes(x=out_i, y=out_i3,group=id)) +
+    geom_path(aes(x=out_i3, y=out_i,group=id)) +
+    geom_path(aes(x=-out_i3, y=out_i,group=id)) +
+    geom_path(aes(x=-out_i, y=out_i3,group=id)) +
+    #geom_path(aes(x=out_i3, y=out_i, group=id)) +
+    #geom_path(aes(x=out_i, y=out_i3,group=id)) +
+    #geom_path(aes(x=-out_i3, y=out_i2, group=id)) +
+    #geom_path(aes(x=-out_i2, y=out_i3,group=id)) +
+     
+    #geom_polygon(aes(x=out_i, y=out_i2,alpha=out_i3,fill=out_i3)) +
+    #geom_polygon(aes(x=out_i2, y=out_i,alpha=out_i3,fill=out_i3)) +
+    #geom_polygon(aes(x=-out_i, y=out_i2,alpha=out_i3,fill=out_i)) +
+    #geom_polygon(aes(x=-out_i2, y=out_i,alpha=out_i3,fill=out_i2)) +
+    #geom_polygon(aes(x=out_i, y=-out_i2,alpha=out_i3,fill=out_i3)) +
+    #geom_polygon(aes(x=out_i2, y=-out_i,alpha=out_i3,fill=out_i3)) +
+    #geom_polygon(aes(x=-out_i, y=-out_i2,alpha=out_i3,fill=out_i)) +
+    #geom_polygon(aes(x=-out_i2, y=-out_i,alpha=out_i3,fill=out_i2)) +
+
+
+     
+    #stat_density2d(aes(x=out_i, y=out_i2,z=out_i2, alpha = ..level..), geom="polygon", n=2) +
+
+    #geom_point(aes(x=out_i, y=out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=out_i2, y=out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=-out_i, y=out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=-out_i2, y=out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=out_i, y=-out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=out_i2, y=-out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=-out_i, y=-out_i2,group=id),size=1.5, linetpe="dotted", stat="identity") +
+    #geom_point(aes(x=-out_i2, y=-out_i,group=id),size=1.5, alpha=0.25,linetpe="dotted", stat="identity") +
+
+    #geom_path(aes(x=X, y=out_i)) +
+    #geom_path(aes(x=out_i, y=X)) +
+    #geom_path(aes(x=out_i, y=-X)) +
+    #geom_path(aes(x=X, y=-out_i)) +
+    #geom_path(aes(x=-X, y=out_i)) +
+    #geom_path(aes(x=-out_i, y=X)) +
+    #geom_path(aes(x=-out_i, y=-X)) +
+    #geom_path(aes(x=-X, y=-out_i)) +
+    #geom_path(aes(x=X, y=-out_i2)) +
+    #geom_path(aes(x=-out_i2, y=X)) +
+
+
+     paper_theme + 
+    facet_wrap(~id, scales="free") +
+    guides(color=FALSE, size=FALSE, alpha=FALSE, fill=FALSE) +
+      scale_colour_gradientn(colours = c("black", "gray", "blue3", "blue4", "purple3"))
+      #scale_fill_gradientn(colours = c("black", "gray", "blue3", "blue4", "purple3"))
+      scale_fill_gradientn(colours = topo.colors(10))
+
+  title <- paste(paste("figs/line_path/l_", i, sep =""), ".pdf", sep="")
+   ggsave(title)
+
+
+}
+
+
+
+
+for (i in 1:10) {
+
+b <- runif(1,5,15)
+  ids <- round(runif(ub, 0, max(data_use$id)))
+  data_make <- subset(data_use, data_use$id %in% ids)
+   ggplot(data=data_make) +
+    #stat_density_2d(aes(x=X, y=out_i,fill=out_i2,group=id)) +
+
+    #geom_path(aes(x=X, y=out_i2,color=out_i,alpha=out_i3, group=id)) +
+    #geom_polygon(aes(x=X, y=out_i,alpha=out_i2,fill=out_i3)) +
+    #stat_density2d(aes(x=X, y=out_i2,z=out_i3, color = ..level..), geom="polygon", n=1) +
+
+    #stat_density2d(aes(x=X, y=out_i2,z=out_i3, fill = ..level..), geom="polygon", n=4) +
+    stat_density2d(aes(x=out_i, y=out_i2,z=out_i2, alpha = ..level..), geom="polygon", n=2) +
+    geom_path(aes(x=out_i, y=out_i2), size=1.25) +
+      geom_path(aes(x=out_i2, y=out_i, group=id), size=1.25) +
+
+    paper_theme + 
+   #facet_wrap(~id, scales="free") +
+    guides(color=FALSE, size=FALSE, alpha=FALSE, fill=FALSE) +
+     scale_colour_gradientn(colours=heat.colors(10)) +
+      scale_fill_gradientn(colours=topo.colors(10))
+
+  
+  title <- paste(paste("figs/polygons/", i, sep =""), ".png", sep="")
+  ggsave(title)
+  
+  
+}
+```
